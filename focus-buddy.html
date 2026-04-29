@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>Focus Buddy | Custom Timer & Focus Tracker</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: system-ui, 'Segoe UI', 'Inter', -apple-system, BlinkMacSystemFont, 'Roboto', sans-serif;
+            transition: all 0.2s ease;
+        }
+
+        body {
+            background: #f0f7ff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 1.5rem;
+        }
+
+        /* Focus Mode overlay style (dim effect) */
+        body.focus-mode {
+            background: #0b1a2e;
+        }
+
+        body.focus-mode .app-container {
+            background: rgba(18, 30, 46, 0.9);
+            backdrop-filter: blur(2px);
+            box-shadow: 0 20px 35px rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(72, 187, 120, 0.3);
+        }
+
+        body.focus-mode .enemies-section,
+        body.focus-mode .timer-panel,
+        body.focus-mode .motivation-box {
+            background: #0f212f;
+            border-color: #2c4c6e;
+        }
+
+        body.focus-mode .timer-display {
+            color: #e2f0ff;
+            text-shadow: 0 0 5px #2b6e4f;
+        }
+
+        .app-container {
+            max-width: 720px;
+            width: 100%;
+            background: white;
+            border-radius: 2.5rem;
+            padding: 1.8rem 2rem 2rem;
+            box-shadow: 0 25px 45px -12px rgba(0, 0, 0, 0.25);
+            transition: all 0.3s cubic-bezier(0.2, 0.9, 0.4, 1.1);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 1.8rem;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            background: linear-gradient(135deg, #1f6e43, #2c9c6e);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            letter-spacing: -0.5px;
+        }
+
+        .sub {
+            color: #5a6e7c;
+            font-weight: 500;
+            margin-top: 0.3rem;
+        }
+
+        /* timer panel */
+        .timer-panel {
+            background: #fefefe;
+            border-radius: 2rem;
+            padding: 1.2rem;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+            margin-bottom: 2rem;
+            border: 1px solid #e2edf2;
+        }
+
+        .timer-display {
+            font-size: 4.5rem;
+            font-weight: 700;
+            text-align: center;
+            font-variant-numeric: tabular-nums;
+            letter-spacing: 4px;
+            color: #1e3b3c;
+            margin: 0.2rem 0;
+        }
+
+        @media (min-width: 500px) {
+            .timer-display {
+                font-size: 6rem;
+            }
+        }
+
+        .progress-bar-container {
+            background: #e0eef5;
+            border-radius: 30px;
+            height: 10px;
+            margin: 1rem 0 1.2rem;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            width: 0%;
+            height: 100%;
+            background: #2c9c6e;
+            border-radius: 30px;
+            transition: width 0.2s linear;
+        }
+
+        /* Custom time input section */
+        .custom-time-section {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 0.8rem;
+            margin: 1rem 0;
+            flex-wrap: wrap;
+            padding: 0.5rem;
+            background: #f8fafc;
+            border-radius: 60px;
+        }
+
+        .custom-time-input {
+            display: flex;
+            align-items: center;
+            gap: 0.3rem;
+            background: white;
+            padding: 0.3rem 0.8rem;
+            border-radius: 50px;
+            border: 1px solid #cbdde6;
+        }
+
+        .custom-time-input input {
+            width: 60px;
+            padding: 0.5rem;
+            border: none;
+            font-size: 1rem;
+            font-weight: 600;
+            text-align: center;
+            outline: none;
+            background: transparent;
+        }
+
+        .custom-time-input span {
+            color: #5a6e7c;
+            font-weight: 500;
+        }
+
+        .set-custom-btn {
+            background: #2c9c6e;
+            border: none;
+            padding: 0.5rem 1.2rem;
+            border-radius: 40px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .set-custom-btn:hover {
+            background: #23855c;
+            transform: scale(1.02);
+        }
+
+        .preset-label {
+            text-align: center;
+            font-size: 0.75rem;
+            color: #6f8f9c;
+            margin: 0.5rem 0 0.2rem;
+            font-weight: 500;
+        }
+
+        .timer-options {
+            display: flex;
+            justify-content: center;
+            gap: 0.8rem;
+            margin: 0.5rem 0;
+            flex-wrap: wrap;
+        }
+
+        .timer-btn {
+            background: #eef3fc;
+            border: none;
+            padding: 0.5rem 1.2rem;
+            border-radius: 40px;
+            font-weight: 600;
+            color: #2c6e5c;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        .timer-btn.active {
+            background: #2c9c6e;
+            color: white;
+            box-shadow: 0 4px 10px rgba(44, 156, 110, 0.3);
+        }
+
+        .action-buttons {
+            display: flex;
+            justify-content: center;
+            gap: 1rem;
+            margin-top: 0.5rem;
+        }
+
+        .action {
+            background: none;
+            border: 1px solid #bdd4e2;
+            padding: 0.6rem 1.5rem;
+            border-radius: 40px;
+            font-weight: 600;
+            cursor: pointer;
+            background: white;
+        }
+
+        .action.start {
+            background: #2c9c6e;
+            border: none;
+            color: white;
+        }
+
+        .action.pause {
+            background: #f5a97f;
+            border: none;
+            color: white;
+        }
+
+        .action.reset {
+            background: #e2e8f0;
+        }
+
+        /* focus enemies section */
+        .enemies-section {
+            background: #fafdff;
+            border-radius: 1.6rem;
+            padding: 1rem 1.2rem;
+            margin-bottom: 1.8rem;
+            border: 1px solid #dce9f0;
+        }
+
+        .section-title {
+            font-weight: 700;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #1f4e3f;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 0.6rem;
+            margin-bottom: 1rem;
+            flex-wrap: wrap;
+        }
+
+        #distractionInput {
+            flex: 1;
+            padding: 0.8rem;
+            border-radius: 60px;
+            border: 1px solid #cbdde6;
+            background: white;
+            font-size: 0.9rem;
+        }
+
+        .add-btn {
+            background: #2c9c6e;
+            border: none;
+            padding: 0 1.2rem;
+            border-radius: 40px;
+            color: white;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .enemies-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.6rem;
+            margin: 1rem 0 0.6rem;
+        }
+
+        .enemy-badge {
+            background: #ffe7e0;
+            padding: 0.4rem 1rem;
+            border-radius: 40px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border-left: 3px solid #e9724d;
+        }
+
+        .remove-enemy {
+            background: none;
+            border: none;
+            font-weight: bold;
+            cursor: pointer;
+            color: #bc5a3c;
+            font-size: 1rem;
+        }
+
+        .simulate-block {
+            margin-top: 0.8rem;
+            display: flex;
+            gap: 0.5rem;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        #simulateInput {
+            flex: 2;
+            padding: 0.6rem;
+            border-radius: 50px;
+            border: 1px solid #ccc;
+        }
+
+        .check-btn {
+            background: #326b8c;
+            border: none;
+            padding: 0.6rem 1rem;
+            border-radius: 50px;
+            color: white;
+            cursor: pointer;
+        }
+
+        .warning-message {
+            background: #fff1f0;
+            padding: 0.6rem;
+            border-radius: 60px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-top: 0.6rem;
+            text-align: center;
+        }
+
+        .motivation-box {
+            background: #eef5f2;
+            border-radius: 1.8rem;
+            padding: 1rem;
+            text-align: center;
+            font-style: italic;
+            font-weight: 500;
+            color: #1f5e48;
+            margin: 1rem 0;
+            border-left: 5px solid #2c9c6e;
+        }
+
+        .streak-box {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: #f2f7fc;
+            padding: 0.6rem 1rem;
+            border-radius: 60px;
+            margin-top: 0.8rem;
+        }
+
+        .streak {
+            font-weight: bold;
+            color: #e67e22;
+        }
+
+        footer {
+            font-size: 0.7rem;
+            text-align: center;
+            margin-top: 1.5rem;
+            color: #6f8f9c;
+        }
+
+        button {
+            cursor: pointer;
+        }
+
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body>
+<div class="app-container" id="appContainer">
+    <div class="header">
+        <h1>🎯 Focus Buddy</h1>
+        <div class="sub">Set your own time · Defeat distractions</div>
+    </div>
+
+    <!-- Smart Timer Area with Custom Time -->
+    <div class="timer-panel">
+        <div class="timer-display" id="timerDisplay">25:00</div>
+        <div class="progress-bar-container">
+            <div class="progress-fill" id="progressFill"></div>
+        </div>
+        
+        <!-- Custom Time Input Section -->
+        <div class="custom-time-section">
+            <div class="custom-time-input">
+                <input type="number" id="customMinutes" min="1" max="180" value="25" step="1">
+                <span>min</span>
+            </div>
+            <button class="set-custom-btn" id="setCustomTimeBtn">⏱️ Set Custom Time</button>
+        </div>
+        
+        <div class="preset-label">— or choose preset —</div>
+        <div class="timer-options">
+            <button data-minutes="15" class="timer-btn">15 min</button>
+            <button data-minutes="25" class="timer-btn active" id="default25Btn">25 min</button>
+            <button data-minutes="50" class="timer-btn">50 min</button>
+        </div>
+        
+        <div class="action-buttons">
+            <button class="action start" id="startBtn">▶ Start Focus</button>
+            <button class="action pause" id="pauseBtn">⏸ Pause</button>
+            <button class="action reset" id="resetBtn">⟳ Reset</button>
+        </div>
+    </div>
+
+    <!-- Distraction Awareness System -->
+    <div class="enemies-section">
+        <div class="section-title">🚫 Focus Enemies</div>
+        <div class="input-group">
+            <input type="text" id="distractionInput" placeholder="e.g., Instagram, TikTok, YouTube" autocomplete="off">
+            <button class="add-btn" id="addEnemyBtn">+ Add Enemy</button>
+        </div>
+        <div class="enemies-list" id="enemiesList"></div>
+        <div class="simulate-block">
+            <input type="text" id="simulateInput" placeholder="Check a site or app...">
+            <button class="check-btn" id="checkDistractionBtn">🔍 Simulate Visit</button>
+        </div>
+        <div id="warningMessage" class="warning-message" style="display: none;"></div>
+    </div>
+
+    <!-- Motivation Engine & Streak -->
+    <div class="motivation-box" id="motivationText">✨ "Discipline beats motivation. Start now!" ✨</div>
+    <div class="streak-box">
+        <span>🔥 Focus Streak</span>
+        <span class="streak" id="streakCounter">0</span>
+        <span>completed sessions</span>
+    </div>
+    <footer>⚡ Your future self will thank you — every minute counts.</footer>
+</div>
+
+<script>
+    // --- Focus Buddy Core with Custom Time Feature ---
+    let timerInterval = null;
+    let timeLeftSeconds = 25 * 60;
+    let initialSeconds = 25 * 60;
+    let isFocusModeActive = false;
+    let timerRunning = false;
+    
+    // DOM elements
+    const timerDisplay = document.getElementById('timerDisplay');
+    const progressFill = document.getElementById('progressFill');
+    const startBtn = document.getElementById('startBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const resetBtn = document.getElementById('resetBtn');
+    const timerOptionBtns = document.querySelectorAll('.timer-btn');
+    const motivationTextEl = document.getElementById('motivationText');
+    const streakSpan = document.getElementById('streakCounter');
+    const enemiesContainer = document.getElementById('enemiesList');
+    const distractionInput = document.getElementById('distractionInput');
+    const addEnemyBtn = document.getElementById('addEnemyBtn');
+    const simulateInput = document.getElementById('simulateInput');
+    const checkDistractionBtn = document.getElementById('checkDistractionBtn');
+    const warningMsgDiv = document.getElementById('warningMessage');
+    const bodyEl = document.body;
+    
+    // Custom time elements
+    const customMinutesInput = document.getElementById('customMinutes');
+    const setCustomTimeBtn = document.getElementById('setCustomTimeBtn');
+    
+    // Data
+    let focusEnemies = [];
+    let streakCount = 0;
+    let currentQuoteIndex = 0;
+    
+    // Motivational quotes
+    const quotes = [
+        "🧠 Your future is watching you — don't blink.",
+        "⚡ Discipline beats motivation. Every. Single. Day.",
+        "📵 One hour of focus = 3 hours of distracted work.",
+        "🎯 Social media will wait. Your dreams won't.",
+        "💪 You're stronger than a notification.",
+        "🌱 Small focus sessions grow big results.",
+        "🚀 Close distractions, open your potential."
+    ];
+    
+    // --- Timer Functions ---
+    function updateTimerUI() {
+        const mins = Math.floor(timeLeftSeconds / 60);
+        const secs = timeLeftSeconds % 60;
+        timerDisplay.textContent = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+        
+        if (initialSeconds > 0) {
+            const percent = ((initialSeconds - timeLeftSeconds) / initialSeconds) * 100;
+            progressFill.style.width = `${Math.min(100, Math.max(0, percent))}%`;
+        } else {
+            progressFill.style.width = '0%';
+        }
+    }
+    
+    function saveTimerPreference() {
+        localStorage.setItem('focusBuddy_lastTimer', initialSeconds);
+    }
+    
+    function loadTimerPreference() {
+        const saved = localStorage.getItem('focusBuddy_lastTimer');
+        if (saved) {
+            const savedSec = parseInt(saved, 10);
+            if (!isNaN(savedSec) && savedSec > 0) {
+                initialSeconds = savedSec;
+                timeLeftSeconds = savedSec;
+                updateTimerUI();
+                
+                // Update custom input display
+                const savedMins = Math.floor(savedSec / 60);
+                customMinutesInput.value = savedMins;
+                
+                // Highlight preset button if matches
+                timerOptionBtns.forEach(btn => {
+                    const mins = parseInt(btn.getAttribute('data-minutes'), 10);
+                    if (mins * 60 === savedSec) {
+                        btn.classList.add('active');
+                    } else {
+                        btn.classList.remove('active');
+                    }
+                });
+                return;
+            }
+        }
+        // default 25 min
+        document.querySelector('.timer-btn[data-minutes="25"]').classList.add('active');
+        customMinutesInput.value = 25;
+    }
+    
+    // Set custom time from input field
+    function setCustomTime() {
+        let minutes = parseInt(customMinutesInput.value, 10);
+        
+        // Validation
+        if (isNaN(minutes) || minutes < 1) {
+            minutes = 1;
+            customMinutesInput.value = 1;
+        }
+        if (minutes > 180) {
+            minutes = 180;
+            customMinutesInput.value = 180;
+        }
+        
+        // Pause timer if running
+        if (timerRunning) {
+            pauseTimer();
+        }
+        
+        const newSeconds = minutes * 60;
+        initialSeconds = newSeconds;
+        timeLeftSeconds = newSeconds;
+        updateTimerUI();
+        saveTimerPreference();
+        
+        // Remove active class from all preset buttons (custom time is not a preset)
+        timerOptionBtns.forEach(btn => btn.classList.remove('active'));
+        
+        // Exit focus mode if active
+        if (isFocusModeActive) {
+            bodyEl.classList.remove('focus-mode');
+            isFocusModeActive = false;
+        }
+        
+        // Show feedback
+        const feedback = document.createElement('div');
+        feedback.textContent = `✅ Timer set to ${minutes} minutes`;
+        feedback.style.position = 'fixed';
+        feedback.style.bottom = '80px';
+        feedback.style.left = '20px';
+        feedback.style.right = '20px';
+        feedback.style.backgroundColor = '#2c9c6e';
+        feedback.style.color = 'white';
+        feedback.style.padding = '10px';
+        feedback.style.borderRadius = '50px';
+        feedback.style.textAlign = 'center';
+        feedback.style.zIndex = '999';
+        feedback.style.fontSize = '0.9rem';
+        document.body.appendChild(feedback);
+        setTimeout(() => feedback.remove(), 2000);
+    }
+    
+    function setTimerMinutes(minutes) {
+        if (timerRunning) pauseTimer();
+        const newSeconds = minutes * 60;
+        initialSeconds = newSeconds;
+        timeLeftSeconds = newSeconds;
+        updateTimerUI();
+        saveTimerPreference();
+        
+        // Update custom input to match
+        customMinutesInput.value = minutes;
+        
+        if (isFocusModeActive) {
+            bodyEl.classList.remove('focus-mode');
+            isFocusModeActive = false;
+        }
+        
+        // Update active class on preset buttons
+        timerOptionBtns.forEach(btn => {
+            const minsVal = parseInt(btn.getAttribute('data-minutes'), 10);
+            if (minsVal === minutes) btn.classList.add('active');
+            else btn.classList.remove('active');
+        });
+    }
+    
+    function startTimer() {
+        if (timerRunning) return;
+        if (timeLeftSeconds <= 0) {
+            timeLeftSeconds = initialSeconds;
+            updateTimerUI();
+        }
+        timerRunning = true;
+        
+        if (!isFocusModeActive) {
+            isFocusModeActive = true;
+            bodyEl.classList.add('focus-mode');
+        }
+        
+        timerInterval = setInterval(() => {
+            if (timeLeftSeconds <= 1) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+                timerRunning = false;
+                handleTimerComplete();
+                updateTimerUI();
+            } else {
+                timeLeftSeconds--;
+                updateTimerUI();
+            }
+        }, 1000);
+    }
+    
+    function pauseTimer() {
+        if (timerInterval) {
+            clearInterval(timerInterval);
+            timerInterval = null;
+        }
+        timerRunning = false;
+    }
+    
+    function resetTimer() {
+        pauseTimer();
+        timeLeftSeconds = initialSeconds;
+        updateTimerUI();
+        if (isFocusModeActive) {
+            bodyEl.classList.remove('focus-mode');
+            isFocusModeActive = false;
+        }
+    }
+    
+    function handleTimerComplete() {
+        timerRunning = false;
+        isFocusModeActive = false;
+        bodyEl.classList.remove('focus-mode');
+        
+        // Increment streak
+        streakCount++;
+        streakSpan.innerText = streakCount;
+        localStorage.setItem('focusBuddy_streak', streakCount);
+        
+        // Celebration UI
+        const celebrationMsg = document.createElement('div');
+        celebrationMsg.innerText = '🎉 Focus Completed ✅ Time for a break! 🎉';
+        celebrationMsg.style.position = 'fixed';
+        celebrationMsg.style.bottom = '20px';
+        celebrationMsg.style.left = '20px';
+        celebrationMsg.style.right = '20px';
+        celebrationMsg.style.backgroundColor = '#2c9c6e';
+        celebrationMsg.style.color = 'white';
+        celebrationMsg.style.padding = '12px';
+        celebrationMsg.style.borderRadius = '60px';
+        celebrationMsg.style.textAlign = 'center';
+        celebrationMsg.style.fontWeight = 'bold';
+        celebrationMsg.style.zIndex = '1000';
+        document.body.appendChild(celebrationMsg);
+        setTimeout(() => { celebrationMsg.remove(); }, 4000);
+        
+        // Beep sound
+        try {
+            const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            const oscillator = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            oscillator.connect(gain);
+            gain.connect(audioCtx.destination);
+            oscillator.frequency.value = 880;
+            gain.gain.value = 0.3;
+            oscillator.start();
+            gain.gain.exponentialRampToValueAtTime(0.00001, audioCtx.currentTime + 0.8);
+            oscillator.stop(audioCtx.currentTime + 0.8);
+        } catch(e) { console.log("audio not supported"); }
+        
+        timeLeftSeconds = initialSeconds;
+        updateTimerUI();
+    }
+    
+    // --- Distraction Functions ---
+    function saveEnemiesToLocal() {
+        localStorage.setItem('focusBuddy_enemies', JSON.stringify(focusEnemies));
+    }
+    
+    function loadEnemies() {
+        const stored = localStorage.getItem('focusBuddy_enemies');
+        if (stored) {
+            try {
+                focusEnemies = JSON.parse(stored);
+            } catch(e) { focusEnemies = []; }
+        } else {
+            focusEnemies = ['instagram', 'tiktok', 'youtube'];
+        }
+        renderEnemiesList();
+    }
+    
+    function renderEnemiesList() {
+        enemiesContainer.innerHTML = '';
+        focusEnemies.forEach((enemy, idx) => {
+            const badge = document.createElement('div');
+            badge.className = 'enemy-badge';
+            badge.innerHTML = `🚫 ${escapeHtml(enemy)} <button class="remove-enemy" data-index="${idx}">✖</button>`;
+            enemiesContainer.appendChild(badge);
+        });
+        document.querySelectorAll('.remove-enemy').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const idx = parseInt(btn.getAttribute('data-index'), 10);
+                focusEnemies.splice(idx, 1);
+                renderEnemiesList();
+                saveEnemiesToLocal();
+            });
+        });
+    }
+    
+    function escapeHtml(str) { 
+        return str.replace(/[&<>]/g, function(m){
+            if(m==='&') return '&amp;'; 
+            if(m==='<') return '&lt;'; 
+            if(m==='>') return '&gt;'; 
+            return m;
+        }); 
+    }
+    
+    function simulateVisit(siteName) {
+        if (!siteName.trim()) {
+            warningMsgDiv.style.display = 'block';
+            warningMsgDiv.innerHTML = '🔍 Enter an app or website name to check.';
+            return;
+        }
+        const lowerSite = siteName.trim().toLowerCase();
+        const isBlocked = focusEnemies.some(enemy => lowerSite.includes(enemy) || enemy.includes(lowerSite));
+        if (isBlocked) {
+            warningMsgDiv.style.display = 'block';
+            warningMsgDiv.innerHTML = `⚠️ "${escapeHtml(siteName)}" is a FOCUS ENEMY! This is stealing your future time! ⚠️`;
+            warningMsgDiv.style.background = "#ffe0db";
+            warningMsgDiv.style.borderLeft = "4px solid #e9724d";
+        } else {
+            warningMsgDiv.style.display = 'block';
+            warningMsgDiv.innerHTML = `✅ "${escapeHtml(siteName)}" is safe to proceed. Stay focused!`;
+            warningMsgDiv.style.background = "#e0f2e9";
+            warningMsgDiv.style.borderLeft = "4px solid #2c9c6e";
+        }
+        setTimeout(() => {
+            warningMsgDiv.style.display = 'none';
+        }, 3000);
+    }
+    
+    function loadStreak() {
+        const savedStreak = localStorage.getItem('focusBuddy_streak');
+        if (savedStreak && !isNaN(parseInt(savedStreak))) {
+            streakCount = parseInt(savedStreak);
+            streakSpan.innerText = streakCount;
+        } else {
+            streakCount = 0;
+            streakSpan.innerText = "0";
+        }
+    }
+    
+    function startQuoteRotator() {
+        setInterval(() => {
+            currentQuoteIndex = (currentQuoteIndex + 1) % quotes.length;
+            motivationTextEl.innerHTML = `✨ "${quotes[currentQuoteIndex]}" ✨`;
+        }, 15000);
+    }
+    
+    // --- Event Listeners ---
+    startBtn.addEventListener('click', startTimer);
+    pauseBtn.addEventListener('click', pauseTimer);
+    resetBtn.addEventListener('click', resetTimer);
+    setCustomTimeBtn.addEventListener('click', setCustomTime);
+    
+    // Allow Enter key on custom input
+    customMinutesInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') setCustomTime();
+    });
+    
+    timerOptionBtns.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+            const mins = parseInt(btn.getAttribute('data-minutes'), 10);
+            if (!isNaN(mins)) setTimerMinutes(mins);
+        });
+    });
+    
+    addEnemyBtn.addEventListener('click', () => {
+        let val = distractionInput.value.trim();
+        if (val === "") return;
+        const lowerVal = val.toLowerCase();
+        if (!focusEnemies.includes(lowerVal)) {
+            focusEnemies.push(lowerVal);
+            renderEnemiesList();
+            saveEnemiesToLocal();
+        }
+        distractionInput.value = "";
+    });
+    
+    checkDistractionBtn.addEventListener('click', () => {
+        simulateVisit(simulateInput.value);
+        simulateInput.value = "";
+    });
+    
+    distractionInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') addEnemyBtn.click(); });
+    simulateInput.addEventListener('keypress', (e) => { if(e.key === 'Enter') checkDistractionBtn.click(); });
+    
+    // Initialize everything
+    loadTimerPreference();
+    loadEnemies();
+    loadStreak();
+    updateTimerUI();
+    startQuoteRotator();
+    motivationTextEl.innerHTML = `✨ "${quotes[0]}" ✨`;
+</script>
+</body>
+</html>
